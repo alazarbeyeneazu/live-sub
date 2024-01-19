@@ -4,21 +4,26 @@
 
 ## Overview
 
-The Live Subdomain Finder is a tool designed to discover and monitor live subdomains for a given domain. It provides a straightforward way to identify active subdomains associated with a target domain, which can be valuable for security assessments, bug bounty programs, or general web presence analysis.
+The Live Subdomain Finder is a robust tool designed to simplify the discovery and monitoring of live subdomains for a specified domain. It provides a user-friendly solution for identifying active subdomains associated with a target domain, making it invaluable for security assessments, bug bounty programs, or general web presence analysis.
 
 ## Features
 
-- **Live Subdomain Discovery:** Quickly find live subdomains associated with a target domain.
-- **Monitoring:** Continuously monitor the availability of discovered subdomains for real-time updates.
-- **Security Assessments:** Useful for penetration testing and security assessments to identify potential attack surfaces.
-- **Bug Bounty:** Enhance your bug bounty program by expanding your scope and discovering additional attack vectors.
+- **Live Subdomain Discovery:** Quickly enumerate live subdomains associated with a target domain.
+
+- **Continuous Monitoring:** Monitor the availability of discovered subdomains for real-time updates.
+
+- **Security Assessments:** Enhance penetration testing efforts by identifying potential attack surfaces.
+
+- **Bug Bounty Programs:** Expand your bug bounty program scope by discovering additional attack vectors.
 
 ## Requirements
 
 Ensure you have the following dependencies installed before using the Live Subdomain Finder:
 
-- amass
-- sublister
+## Usage
 
+To run the Live Subdomain Finder, execute the following command:
 
+```bash
+go run cmd/main.go
 
