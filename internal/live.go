@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/hacker301et/live-sub/models"
@@ -26,12 +27,11 @@ func checkWebsite(url string, timeout time.Duration) error {
 	return nil
 }
 
-func CheckSubDomain(subs []string, respChannel chan models.ResponseMsg) {
-
+func worker(subChannel <-chan string, respChannel chan<- models.ResponseMsg, wg *sync.WaitGroup, timeout time.Duration) {
+	defer wg.Done()
 	protocols := []string{"http://", "https://", "http://www.", "https://www."}
-	timeout := time.Second * 5 // Adjust the timeout as needed
 
-	for _, sub := range subs {
+	for sub := range subChannel {
 		for _, protocol := range protocols {
 			url := protocol + sub
 
@@ -43,4 +43,22 @@ func CheckSubDomain(subs []string, respChannel chan models.ResponseMsg) {
 			}
 		}
 	}
+}
+
+func CheckSubDomain(subs []string, respChannel chan models.ResponseMsg) {
+	numWorkers := 10
+	timeout := time.Second * 5
+	subChannel := make(chan string, len(subs))
+	var wg sync.WaitGroup
+
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go worker(subChannel, respChannel, &wg, timeout)
+	}
+	for _, sub := range subs {
+		subChannel <- sub
+	}
+	close(subChannel)
+	wg.Wait()
+	close(respChannel)
 }
