@@ -4,6 +4,7 @@ package view
 // through a channel.
 
 import (
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,26 +13,29 @@ import (
 	"github.com/hacker301et/live-sub/models"
 )
 
-// type models.ResponseMsg struct{}
 type endLoaidng struct{}
 type model struct {
-	Sub    chan models.ResponseMsg
-	table  table.Model
-	FQDN   textinput.Model
-	typing bool
-	rows   []table.Row
+	Sub     chan models.ResponseMsg
+	spinner spinner.Model
+	table   table.Model
+	FQDN    textinput.Model
+	typing  bool
+	rows    []table.Row
 }
 
 func NewView() *model {
-
+	sp := spinner.New()
+	sp.Tick()
+	sp.Spinner = spinner.Points
 	ti := textinput.NewModel()
 	ti.Focus()
 	ti.Placeholder = "Enter FQDM here "
 	m := model{
-		Sub:    make(chan models.ResponseMsg),
-		FQDN:   ti,
-		typing: true,
-		rows:   make([]table.Row, 0),
+		Sub:     make(chan models.ResponseMsg),
+		FQDN:    ti,
+		typing:  true,
+		rows:    make([]table.Row, 0),
+		spinner: sp,
 	}
 	columns := []table.Column{
 		{Title: "Tool", Width: 10},
@@ -97,7 +101,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			m.typing = false
 			go m.FindSubDomains()
-			return m, cmd
+			return m, tea.Batch(cmd, m.spinner.Tick)
 		case "up":
 			m.table, cmd = m.table.Update(msg)
 			return m, cmd
@@ -109,7 +113,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.rows = append(m.rows, table.Row{teaMsg.ToolName, teaMsg.FQDN})
 		m.table.SetRows(m.rows)
 		return m, waitForActivity(m.Sub)
+	case spinner.TickMsg:
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 	}
+
 	m.FQDN, cmd = m.FQDN.Update(msg)
 
 	return m, cmd
@@ -119,5 +127,5 @@ func (m model) View() string {
 	if m.typing {
 		return m.FQDN.View()
 	}
-	return baseStyle.Render(m.table.View()) + "\n"
+	return baseStyle.Render("       "+m.spinner.View()+"\n"+m.table.View()) + "\n"
 }
