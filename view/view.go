@@ -88,6 +88,8 @@ func (m *model) endLoading() tea.Cmd {
 }
 func (m *model) FindSubDomains() {
 	subs := internal.SubLister(m.FQDN.Value())
+	amassSubs := internal.AmassFindSubDomains(m.FQDN.Value())
+	subs = append(subs, amassSubs...)
 	m.endLoading()
 	internal.CheckSubDomain(subs, m.Sub)
 }
