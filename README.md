@@ -20,6 +20,8 @@ The Live Subdomain Finder is a robust tool designed to simplify the discovery an
 
 Ensure you have the following dependencies installed before using the Live Subdomain Finder:
 
+- **amass**
+
 ## Usage
 
 To run the Live Subdomain Finder, execute the following command:
