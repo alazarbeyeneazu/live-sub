@@ -20,7 +20,7 @@ The Live Subdomain Finder is a robust tool designed to simplify the discovery an
 
 Ensure you have the following dependencies installed before using the Live Subdomain Finder:
 
-- **amass**
+- **amass:** (https://github.com/OWASP/Amass)
 
 ## Usage
 
