@@ -2,21 +2,24 @@ package internal
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
+	"io/ioutil"
+	"net/http"
 	"regexp"
 )
 
 func SubLister(fqdn string) []string {
 	url := fmt.Sprintf("https://subdomainfinder.c99.nl/scans/2024-01-15/%s", fqdn)
-	cmd := exec.Command("curl", url)
-	output, err := cmd.Output()
+	response, err := http.Get(url)
 	if err != nil {
-		fmt.Println("Error executing curl command:", err)
-		os.Exit(1)
+		return []string{}
 	}
+	defer response.Body.Close()
 
-	htmlResponse := string(output)
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return []string{}
+	}
+	htmlResponse := string(body)
 
 	pattern := `onclick="checkStatus\('([^']+)'`
 

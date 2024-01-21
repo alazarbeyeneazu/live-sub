@@ -14,6 +14,12 @@ import (
 )
 
 type endLoaidng struct{}
+
+const (
+	SUBLISTER = "sub-lister"
+	AMASS     = "Amass"
+)
+
 type model struct {
 	Sub      chan models.ResponseMsg
 	spinner  spinner.Model
@@ -29,6 +35,7 @@ func NewView() *model {
 	sp.Spinner = spinner.Points
 	ti := textinput.NewModel()
 	ti.Focus()
+	ti.PromptStyle = ti.TextStyle
 	ti.Placeholder = "Enter FQDM here "
 	m := model{
 		Sub:     make(chan models.ResponseMsg),
@@ -88,10 +95,13 @@ func (m *model) endLoading() tea.Cmd {
 }
 func (m *model) FindSubDomains() {
 	subs := internal.SubLister(m.FQDN.Value())
+	if len(subs) > 0 {
+		internal.CheckSubDomain(subs, m.Sub, SUBLISTER, false)
+	}
 	amassSubs := internal.AmassFindSubDomains(m.FQDN.Value())
-	subs = append(subs, amassSubs...)
 	m.endLoading()
-	internal.CheckSubDomain(subs, m.Sub)
+	internal.CheckSubDomain(amassSubs, m.Sub, AMASS, true)
+
 }
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -132,5 +142,5 @@ func (m model) View() string {
 	if m.typing {
 		return m.FQDN.View()
 	}
-	return baseStyle.Render("       "+m.spinner.View()+"\n"+m.webtable.View()) + "\n"
+	return baseStyle.Render("      "+m.spinner.View()+"\n"+m.webtable.View()) + "\n"
 }
