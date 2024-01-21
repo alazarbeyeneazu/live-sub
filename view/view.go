@@ -15,12 +15,12 @@ import (
 
 type endLoaidng struct{}
 type model struct {
-	Sub     chan models.ResponseMsg
-	spinner spinner.Model
-	table   table.Model
-	FQDN    textinput.Model
-	typing  bool
-	rows    []table.Row
+	Sub      chan models.ResponseMsg
+	spinner  spinner.Model
+	webtable table.Model
+	FQDN     textinput.Model
+	typing   bool
+	rows     []table.Row
 }
 
 func NewView() *model {
@@ -60,7 +60,7 @@ func NewView() *model {
 		Background(lipgloss.Color("57")).
 		Bold(false)
 	t.SetStyles(s)
-	m.table = t
+	m.webtable = t
 	return &m
 }
 
@@ -103,19 +103,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			go m.FindSubDomains()
 			return m, tea.Batch(cmd, m.spinner.Tick)
 		case "up":
-			m.table, cmd = m.table.Update(msg)
+			m.webtable, cmd = m.webtable.Update(msg)
 			return m, cmd
 		case "down":
-			m.table, cmd = m.table.Update(msg)
+			m.webtable, cmd = m.webtable.Update(msg)
 			return m, cmd
 		}
 	case models.ResponseMsg:
 		m.rows = append(m.rows, table.Row{teaMsg.ToolName, teaMsg.FQDN})
-		m.table.SetRows(m.rows)
+		m.webtable.SetRows(m.rows)
 		return m, waitForActivity(m.Sub)
 	case spinner.TickMsg:
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
+	case tea.WindowSizeMsg:
+		m.webtable.SetWidth(teaMsg.Width)
+		m.webtable.SetHeight(teaMsg.Height - 10)
 	}
 
 	m.FQDN, cmd = m.FQDN.Update(msg)
@@ -127,5 +130,5 @@ func (m model) View() string {
 	if m.typing {
 		return m.FQDN.View()
 	}
-	return baseStyle.Render("       "+m.spinner.View()+"\n"+m.table.View()) + "\n"
+	return baseStyle.Render("       "+m.spinner.View()+"\n"+m.webtable.View()) + "\n"
 }
