@@ -5,10 +5,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"time"
 )
 
-func SubLister(fqdn string) []string {
-	url := fmt.Sprintf("https://subdomainfinder.c99.nl/scans/2024-01-15/%s", fqdn)
+func SubLister(fqdn string, startDate int) []string {
+	date := time.Now().Add(time.Hour * -time.Duration(startDate) * 24)
+	fDate := date.Format("2006-01-02")
+
+	url := fmt.Sprintf("https://subdomainfinder.c99.nl/scans/%s/%s", fDate, fqdn)
 	response, err := http.Get(url)
 	if err != nil {
 		return []string{}
@@ -21,7 +25,7 @@ func SubLister(fqdn string) []string {
 	}
 	htmlResponse := string(body)
 
-	pattern := `onclick="checkStatus\('([^']+)'`
+	pattern := fmt.Sprintf(`href='//([^']*\b%s\b)'`, fqdn)
 
 	re := regexp.MustCompile(pattern)
 
@@ -34,7 +38,6 @@ func SubLister(fqdn string) []string {
 			subdomains = append(subdomains, subdomain)
 		}
 	}
-
 	return subdomains
 
 }

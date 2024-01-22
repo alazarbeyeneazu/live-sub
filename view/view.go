@@ -21,6 +21,7 @@ type endLoaidng struct{}
 const (
 	SUBLISTER = "sub-lister"
 	AMASS     = "Amass"
+	STARTDATE = 30
 )
 
 type model struct {
@@ -30,6 +31,7 @@ type model struct {
 	apiTable table.Model
 	FQDN     textinput.Model
 	typing   bool
+	err      error
 	rows     []table.Row
 	apiRows  []table.Row
 }
@@ -111,13 +113,18 @@ func (m *model) endLoading() tea.Cmd {
 	}
 }
 func (m *model) FindSubDomains() {
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func(w *sync.WaitGroup) {
 		defer w.Done()
-		subs := internal.SubLister(m.FQDN.Value())
-		if len(subs) > 0 {
-			internal.CheckSubDomain(subs, m.Sub, SUBLISTER)
+
+		for date := STARTDATE; date > -1; date-- {
+			subs := internal.SubLister(m.FQDN.Value(), date)
+			if len(subs) > 0 {
+				internal.CheckSubDomain(subs, m.Sub, SUBLISTER)
+				break
+			}
 		}
 
 	}(&wg)
@@ -135,9 +142,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "enter":
-			m.typing = false
-			go m.FindSubDomains()
-			return m, tea.Batch(cmd, m.spinner.Tick)
+			if m.typing {
+				m.typing = false
+				go m.FindSubDomains()
+				return m, tea.Batch(cmd, m.spinner.Tick)
+			}
 		case "up":
 			m.webtable, cmd = m.webtable.Update(msg)
 			return m, cmd
