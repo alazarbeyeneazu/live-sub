@@ -27,5 +27,8 @@ Ensure you have the following dependencies installed before using the Live Subdo
 To run the Live Subdomain Finder, execute the following command:
 
 ```bash
+git clone https://github.com/hacker301et/live-sub.git
+cd live-sub
 go run cmd/main.go
+```
 
