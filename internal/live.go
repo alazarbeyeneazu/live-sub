@@ -45,7 +45,7 @@ func worker(subChannel <-chan string, respChannel chan<- models.ResponseMsg, wg 
 	}
 }
 
-func CheckSubDomain(subs []string, respChannel chan models.ResponseMsg, toolName string, closeCh bool) {
+func CheckSubDomain(subs []string, respChannel chan models.ResponseMsg, toolName string) {
 	numWorkers := 25
 	timeout := time.Second * 5
 	subChannel := make(chan string, len(subs))
@@ -58,9 +58,5 @@ func CheckSubDomain(subs []string, respChannel chan models.ResponseMsg, toolName
 	for _, sub := range subs {
 		subChannel <- sub
 	}
-	if closeCh {
-		close(subChannel)
-		wg.Wait()
-		close(respChannel)
-	}
+
 }
