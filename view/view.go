@@ -4,6 +4,9 @@ package view
 // through a channel.
 
 import (
+	"strings"
+	"sync"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -24,9 +27,11 @@ type model struct {
 	Sub      chan models.ResponseMsg
 	spinner  spinner.Model
 	webtable table.Model
+	apiTable table.Model
 	FQDN     textinput.Model
 	typing   bool
 	rows     []table.Row
+	apiRows  []table.Row
 }
 
 func NewView() *model {
@@ -35,7 +40,9 @@ func NewView() *model {
 	sp.Spinner = spinner.Points
 	ti := textinput.NewModel()
 	ti.Focus()
-	ti.PromptStyle = ti.TextStyle
+	ti.PromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34"))
+	ti.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Border(lipgloss.BlockBorder())
+
 	ti.Placeholder = "Enter FQDM here "
 	m := model{
 		Sub:     make(chan models.ResponseMsg),
@@ -43,7 +50,9 @@ func NewView() *model {
 		typing:  true,
 		rows:    make([]table.Row, 0),
 		spinner: sp,
+		apiRows: make([]table.Row, 0),
 	}
+
 	columns := []table.Column{
 		{Title: "Tool", Width: 10},
 		{Title: "Live Sub", Width: 150},
@@ -56,6 +65,12 @@ func NewView() *model {
 		table.WithHeight(15),
 	)
 
+	t2 := table.New(
+		table.WithColumns(columns),
+		table.WithRows(m.rows),
+		table.WithFocused(true),
+		table.WithHeight(15),
+	)
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
@@ -67,7 +82,9 @@ func NewView() *model {
 		Background(lipgloss.Color("57")).
 		Bold(false)
 	t.SetStyles(s)
+	t2.SetStyles(s)
 	m.webtable = t
+	m.apiTable = t2
 	return &m
 }
 
@@ -94,13 +111,20 @@ func (m *model) endLoading() tea.Cmd {
 	}
 }
 func (m *model) FindSubDomains() {
-	subs := internal.SubLister(m.FQDN.Value())
-	if len(subs) > 0 {
-		internal.CheckSubDomain(subs, m.Sub, SUBLISTER, false)
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(w *sync.WaitGroup) {
+		defer w.Done()
+		subs := internal.SubLister(m.FQDN.Value())
+		if len(subs) > 0 {
+			internal.CheckSubDomain(subs, m.Sub, SUBLISTER)
+		}
+
+	}(&wg)
 	amassSubs := internal.AmassFindSubDomains(m.FQDN.Value())
 	m.endLoading()
-	internal.CheckSubDomain(amassSubs, m.Sub, AMASS, true)
+	internal.CheckSubDomain(amassSubs, m.Sub, AMASS)
+	wg.Wait()
 
 }
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -120,8 +144,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "down":
 			m.webtable, cmd = m.webtable.Update(msg)
 			return m, cmd
+		case "left":
+			m.apiTable, cmd = m.apiTable.Update(tea.KeyMsg{Type: tea.KeyUp})
+			return m, cmd
+		case "right":
+			m.apiTable, cmd = m.apiTable.Update(tea.KeyMsg{Type: tea.KeyDown})
+			return m, cmd
+
 		}
 	case models.ResponseMsg:
+		if strings.Contains(teaMsg.FQDN, "api") {
+			m.apiRows = append(m.apiRows, table.Row{teaMsg.ToolName, teaMsg.FQDN})
+			m.apiTable.SetRows(m.apiRows)
+			return m, waitForActivity(m.Sub)
+		}
 		m.rows = append(m.rows, table.Row{teaMsg.ToolName, teaMsg.FQDN})
 		m.webtable.SetRows(m.rows)
 		return m, waitForActivity(m.Sub)
@@ -130,7 +166,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	case tea.WindowSizeMsg:
 		m.webtable.SetWidth(teaMsg.Width)
-		m.webtable.SetHeight(teaMsg.Height - 10)
+		m.webtable.SetHeight(teaMsg.Height/2 - 10)
 	}
 
 	m.FQDN, cmd = m.FQDN.Update(msg)
@@ -142,5 +178,5 @@ func (m model) View() string {
 	if m.typing {
 		return m.FQDN.View()
 	}
-	return baseStyle.Render("      "+m.spinner.View()+"\n"+m.webtable.View()) + "\n"
+	return baseStyle.Render("      "+m.spinner.View()+"\n"+m.webtable.View()) + "\n" + baseStyle.UnsetAlignHorizontal().Render(" APIs     "+"\n"+m.apiTable.View()) + "\n"
 }
