@@ -21,6 +21,7 @@ type endLoaidng struct{}
 const (
 	SUBLISTER = "sub-lister"
 	AMASS     = "Amass"
+	STARTDATE = 30
 )
 
 type model struct {
@@ -112,13 +113,18 @@ func (m *model) endLoading() tea.Cmd {
 	}
 }
 func (m *model) FindSubDomains() {
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func(w *sync.WaitGroup) {
 		defer w.Done()
-		subs := internal.SubLister(m.FQDN.Value())
-		if len(subs) > 0 {
-			internal.CheckSubDomain(subs, m.Sub, SUBLISTER)
+
+		for date := STARTDATE; date > -1; date-- {
+			subs := internal.SubLister(m.FQDN.Value(), date)
+			if len(subs) > 0 {
+				internal.CheckSubDomain(subs, m.Sub, SUBLISTER)
+				break
+			}
 		}
 
 	}(&wg)
@@ -181,9 +187,5 @@ func (m model) View() string {
 	if m.typing {
 		return m.FQDN.View()
 	}
-	// if m.err != nil {
-	// 	tea.Quit()
-	// 	return "Error while getting the host"
-	// }
 	return baseStyle.Render("      "+m.spinner.View()+"\n"+m.webtable.View()) + "\n" + baseStyle.UnsetAlignHorizontal().Render(" APIs     "+"\n"+m.apiTable.View()) + "\n"
 }

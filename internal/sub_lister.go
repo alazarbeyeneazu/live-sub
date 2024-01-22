@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func SubLister(fqdn string) []string {
-	date := time.Now()
+func SubLister(fqdn string, startDate int) []string {
+	date := time.Now().Add(time.Hour * -time.Duration(startDate) * 24)
 	fDate := date.Format("2006-01-02")
 
 	url := fmt.Sprintf("https://subdomainfinder.c99.nl/scans/%s/%s", fDate, fqdn)
