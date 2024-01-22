@@ -30,6 +30,7 @@ type model struct {
 	apiTable table.Model
 	FQDN     textinput.Model
 	typing   bool
+	err      error
 	rows     []table.Row
 	apiRows  []table.Row
 }
@@ -135,9 +136,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "enter":
-			m.typing = false
-			go m.FindSubDomains()
-			return m, tea.Batch(cmd, m.spinner.Tick)
+			if m.typing {
+				m.typing = false
+				go m.FindSubDomains()
+				return m, tea.Batch(cmd, m.spinner.Tick)
+			}
 		case "up":
 			m.webtable, cmd = m.webtable.Update(msg)
 			return m, cmd
@@ -178,5 +181,9 @@ func (m model) View() string {
 	if m.typing {
 		return m.FQDN.View()
 	}
+	// if m.err != nil {
+	// 	tea.Quit()
+	// 	return "Error while getting the host"
+	// }
 	return baseStyle.Render("      "+m.spinner.View()+"\n"+m.webtable.View()) + "\n" + baseStyle.UnsetAlignHorizontal().Render(" APIs     "+"\n"+m.apiTable.View()) + "\n"
 }
