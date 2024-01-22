@@ -187,5 +187,5 @@ func (m model) View() string {
 	if m.typing {
 		return m.FQDN.View()
 	}
-	return baseStyle.Render("      "+m.spinner.View()+"\n"+m.webtable.View()) + "\n" + baseStyle.UnsetAlignHorizontal().Render(" APIs     "+"\n"+m.apiTable.View()) + "\n"
+	return baseStyle.Render("      "+m.spinner.View()+"\n Wesbites  ⬆  To Move Up   ⬇  To Move down \n"+m.webtable.View()) + "\n" + baseStyle.UnsetAlignHorizontal().Render(" APIs     "+"  ⬅  To Move Up   ➡  To Move down \n"+m.apiTable.View()) + "\n"
 }
