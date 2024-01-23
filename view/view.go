@@ -21,6 +21,7 @@ type endLoaidng struct{}
 const (
 	SUBLISTER = "sub-lister"
 	AMASS     = "Amass"
+	SUBFINDER = "Subfinder"
 	STARTDATE = 30
 )
 
@@ -115,9 +116,9 @@ func (m *model) endLoading() tea.Cmd {
 	}
 }
 func (m *model) FindSubDomains() {
-
+	go m.endLoading()
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(3)
 	go func(w *sync.WaitGroup) {
 		defer w.Done()
 
@@ -130,9 +131,16 @@ func (m *model) FindSubDomains() {
 		}
 
 	}(&wg)
-	amassSubs := internal.AmassFindSubDomains(m.FQDN.Value())
-	m.endLoading()
-	internal.CheckSubDomain(amassSubs, m.Sub, AMASS)
+	go func(w *sync.WaitGroup) {
+		defer w.Done()
+		amassSubs := internal.AmassFindSubDomains(m.FQDN.Value())
+		internal.CheckSubDomain(amassSubs, m.Sub, AMASS)
+	}(&wg)
+	go func(w *sync.WaitGroup) {
+		defer w.Done()
+		subfinderSubs := internal.SubFinderFindSubDomains(m.FQDN.Value())
+		internal.CheckSubDomain(subfinderSubs, m.Sub, SUBFINDER)
+	}(&wg)
 	wg.Wait()
 
 }
