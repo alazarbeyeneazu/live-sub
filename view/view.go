@@ -25,15 +25,16 @@ const (
 )
 
 type model struct {
-	Sub      chan models.ResponseMsg
-	spinner  spinner.Model
-	webtable table.Model
-	apiTable table.Model
-	FQDN     textinput.Model
-	typing   bool
-	err      error
-	rows     []table.Row
-	apiRows  []table.Row
+	Sub        chan models.ResponseMsg
+	spinner    spinner.Model
+	webtable   table.Model
+	apiTable   table.Model
+	FQDN       textinput.Model
+	typing     bool
+	err        error
+	rows       []table.Row
+	apiRows    []table.Row
+	rowTracker map[string]bool
 }
 
 func NewView() *model {
@@ -47,12 +48,13 @@ func NewView() *model {
 
 	ti.Placeholder = "Enter FQDM here "
 	m := model{
-		Sub:     make(chan models.ResponseMsg),
-		FQDN:    ti,
-		typing:  true,
-		rows:    make([]table.Row, 0),
-		spinner: sp,
-		apiRows: make([]table.Row, 0),
+		Sub:        make(chan models.ResponseMsg),
+		FQDN:       ti,
+		typing:     true,
+		rows:       make([]table.Row, 0),
+		spinner:    sp,
+		apiRows:    make([]table.Row, 0),
+		rowTracker: make(map[string]bool),
 	}
 
 	columns := []table.Column{
@@ -162,6 +164,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 	case models.ResponseMsg:
+		if exist := m.rowTracker[teaMsg.FQDN]; exist {
+			return m, nil
+		}
+		m.rowTracker[teaMsg.FQDN] = true
 		if strings.Contains(teaMsg.FQDN, "api") {
 			m.apiRows = append(m.apiRows, table.Row{teaMsg.ToolName, teaMsg.FQDN})
 			m.apiTable.SetRows(m.apiRows)
