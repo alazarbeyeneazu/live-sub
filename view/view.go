@@ -35,6 +35,7 @@ type model struct {
 	err        error
 	rows       []table.Row
 	apiRows    []table.Row
+	apiFound   bool
 	rowTracker map[string]bool
 }
 
@@ -79,11 +80,11 @@ func NewView() *model {
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
+		BorderForeground(lipgloss.Color("34")).
 		BorderBottom(true).
 		Bold(false)
 	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
+		Foreground(lipgloss.Color("34")).
 		Background(lipgloss.Color("57")).
 		Bold(false)
 	t.SetStyles(s)
@@ -177,6 +178,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.rowTracker[teaMsg.FQDN] = true
 		if strings.Contains(teaMsg.FQDN, "api") {
+			m.apiFound = true
 			m.apiRows = append(m.apiRows, table.Row{teaMsg.ToolName, teaMsg.FQDN})
 			m.apiTable.SetRows(m.apiRows)
 			return m, waitForActivity(m.Sub)
@@ -188,18 +190,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
 	case tea.WindowSizeMsg:
-		m.webtable.SetWidth(teaMsg.Width)
 		m.webtable.SetHeight(teaMsg.Height/2 - 10)
+		m.apiTable.SetHeight(teaMsg.Height/2 - 10)
 	}
 
 	m.FQDN, cmd = m.FQDN.Update(msg)
 
 	return m, cmd
 }
-
+func returnView(views ...string) string {
+	var v string
+	for _, view := range views {
+		v = v + view
+	}
+	return v
+}
 func (m model) View() string {
+	webView := baseStyle.Render("      "+m.spinner.View()+"\n Wesbites  ⬆  To Move Up   ⬇  To Move down \n"+m.webtable.View()) + "\n"
+	apiView := baseStyle.Render(" APIs     "+"  ⬅  To Move Up   ➡  To Move down \n"+m.apiTable.View()) + "\n"
 	if m.typing {
 		return m.FQDN.View()
 	}
-	return baseStyle.Render("      "+m.spinner.View()+"\n Wesbites  ⬆  To Move Up   ⬇  To Move down \n"+m.webtable.View()) + "\n" + baseStyle.UnsetAlignHorizontal().Render(" APIs     "+"  ⬅  To Move Up   ➡  To Move down \n"+m.apiTable.View()) + "\n"
+
+	return returnView(webView, apiView)
+
 }
