@@ -84,8 +84,8 @@ func NewView() *model {
 		BorderBottom(true).
 		Bold(false)
 	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("34")).
-		Background(lipgloss.Color("57")).
+		Foreground(lipgloss.Color("234")).
+		Background(lipgloss.Color("34")).
 		Bold(false)
 	t.SetStyles(s)
 	t2.SetStyles(s)
