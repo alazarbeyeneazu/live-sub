@@ -43,7 +43,7 @@ type model struct {
 }
 
 func (m *model) readCSV() ([]models.ResponseMsg, error) {
-	fileName := fmt.Sprintf("scans/%s", m.FQDN.Value())
+	fileName := fmt.Sprintf("scans/%s.csv", m.FQDN.Value())
 	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		return []models.ResponseMsg{}, err
@@ -57,7 +57,7 @@ func (m *model) readCSV() ([]models.ResponseMsg, error) {
 
 }
 func (m *model) writeCSV(domains []models.ResponseMsg) error {
-	dirName := fmt.Sprintf("scans/%s", m.FQDN.Value())
+	dirName := fmt.Sprintf("scans/%s.csv", m.FQDN.Value())
 	file, err := os.OpenFile(dirName, os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		return err
@@ -203,6 +203,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.rowTracker[teaMsg.FQDN] = true
+		domains, _ := m.readCSV()
+		domains = append(domains, teaMsg)
+		m.writeCSV(domains)
 		if strings.Contains(teaMsg.FQDN, "api") {
 			m.apiFound = true
 			m.apiRows = append(m.apiRows, table.Row{teaMsg.ToolName, teaMsg.FQDN})
