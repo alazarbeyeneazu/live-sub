@@ -4,6 +4,8 @@ package view
 // through a channel.
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	csv "github.com/gocarina/gocsv"
 	"github.com/hacker301et/live-sub/internal"
 	"github.com/hacker301et/live-sub/models"
 )
@@ -39,6 +42,29 @@ type model struct {
 	rowTracker map[string]bool
 }
 
+func (m *model) readCSV() ([]models.ResponseMsg, error) {
+	fileName := fmt.Sprintf("scans/%s.csv", m.FQDN.Value())
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return []models.ResponseMsg{}, err
+	}
+	defer file.Close()
+	var domains []models.ResponseMsg
+	if err := csv.UnmarshalFile(file, &domains); err != nil {
+		return []models.ResponseMsg{}, err
+	}
+	return domains, nil
+
+}
+func (m *model) writeCSV(domains []models.ResponseMsg) error {
+	dirName := fmt.Sprintf("scans/%s.csv", m.FQDN.Value())
+	file, err := os.OpenFile(dirName, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return csv.MarshalFile(domains, file)
+}
 func NewView() *model {
 	sp := spinner.New()
 	sp.Tick()
@@ -177,6 +203,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.rowTracker[teaMsg.FQDN] = true
+		domains, _ := m.readCSV()
+		domains = append(domains, teaMsg)
+		m.writeCSV(domains)
 		if strings.Contains(teaMsg.FQDN, "api") {
 			m.apiFound = true
 			m.apiRows = append(m.apiRows, table.Row{teaMsg.ToolName, teaMsg.FQDN})

@@ -1,6 +1,6 @@
 package models
 
 type ResponseMsg struct {
-	ToolName string
-	FQDN     string
+	ToolName string `csv:"tool_name"`
+	FQDN     string `csv:"fqdn"`
 }
