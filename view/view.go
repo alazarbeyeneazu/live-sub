@@ -4,6 +4,8 @@ package view
 // through a channel.
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	csv "github.com/gocarina/gocsv"
 	"github.com/hacker301et/live-sub/internal"
 	"github.com/hacker301et/live-sub/models"
 )
@@ -39,6 +42,20 @@ type model struct {
 	rowTracker map[string]bool
 }
 
+func (m *model) readCSV() ([]models.ResponseMsg, error) {
+	fileName := fmt.Sprintf("scans/%s", m.FQDN.Value())
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return []models.ResponseMsg{}, err
+	}
+	defer file.Close()
+	var domains []models.ResponseMsg
+	if err := csv.UnmarshalFile(file, &domains); err != nil {
+		return []models.ResponseMsg{}, err
+	}
+	return domains, nil
+
+}
 func NewView() *model {
 	sp := spinner.New()
 	sp.Tick()
