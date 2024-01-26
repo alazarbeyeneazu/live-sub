@@ -56,6 +56,15 @@ func (m *model) readCSV() ([]models.ResponseMsg, error) {
 	return domains, nil
 
 }
+func (m *model) writeCSV(domains []models.ResponseMsg) error {
+	dirName := fmt.Sprintf("scans/%s", m.FQDN.Value())
+	file, err := os.OpenFile(dirName, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return csv.MarshalFile(domains, file)
+}
 func NewView() *model {
 	sp := spinner.New()
 	sp.Tick()
