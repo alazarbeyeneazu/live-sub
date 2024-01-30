@@ -33,3 +33,13 @@ cd live-sub
 go run cmd/main.go
 ```
 
+To run the Live Subdomain Finder Using Docker, execute the following command:
+
+```bash
+git clone https://github.com/hacker301et/live-sub.git
+docker build -t live-sub .
+docker run --rm -it live-sub
+```
+
+
+
