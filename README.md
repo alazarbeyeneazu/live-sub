@@ -37,6 +37,7 @@ To run the Live Subdomain Finder Using Docker, execute the following command:
 
 ```bash
 git clone https://github.com/hacker301et/live-sub.git
+cd live-sub
 docker build -t live-sub .
 docker run --rm -it live-sub
 ```
